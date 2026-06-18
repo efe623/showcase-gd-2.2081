@@ -23,11 +23,5 @@
 			"version": ">=v1.22.0",
 			"required": true
 		}
-	},
-	"resources": {
-		"sprites": [
-			"resources/clapper.png",
-			"resources/auto-button-example.png"
-		]
 	}
 }

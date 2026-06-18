@@ -33,7 +33,7 @@ struct SBLevelInfoLayer : geode::Modify<SBLevelInfoLayer, LevelInfoLayer> {
 
     APIManager::get().tryUpload();
 
-    auto sprite = CircleButtonSprite::createWithSprite("clapper.png"_spr);
+    auto sprite = CircleButtonSprite::createWithSprite("GJ_playBtn2_001.png");
 
     sprite->setScale(0.5f);
 
