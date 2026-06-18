@@ -45,8 +45,8 @@ void ReplayManager::stopReplay() {
 
 struct SCReplayBaseGameLayer
     : geode::Modify<SCReplayBaseGameLayer, GJBaseGameLayer> {
-  void processCommands(float dt) {
-    GJBaseGameLayer::processCommands(dt);
+  void processCommands(float dt, bool isHalfTick, bool isLastTick) {
+    GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
 
     if (ReplayManager::get().isReplayActive()) {
       int currentFrame = this->m_gameState.m_currentProgress;

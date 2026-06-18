@@ -17,7 +17,7 @@ GetReplayTask getReplay(const GetReplayInput& input) {
   std::span<uint8_t> gdr2RawSpan(gdr2Raw);
   auto gdr2 = ShowcaseBotReplay::importData(gdr2RawSpan);
   if (gdr2.isErr()) {
-    co_return Err(gdr2.unwrapErr());
+    co_return geode::Err(gdr2.unwrapErr());
   }
-  co_return Ok(gdr2.unwrap());
+  co_return geode::Ok(gdr2.unwrap());
 }
