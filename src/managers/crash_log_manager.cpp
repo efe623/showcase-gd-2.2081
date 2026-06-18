@@ -12,13 +12,7 @@ bool CrashLogManager::init() {
     return true;
   }
 
-  try {
-    reportLatestCrashLog();
-  } catch (const std::exception& e) {
-    log::error("Unreportable error has occured in Showcase mod. Please manually report this error: {}.", e.what());
-  } catch (...) {
-    log::error("An unknown and unreportable error has occured in Showcase mod.");
-  }
+  m_initialized = true;
 
   return true;
 }

@@ -8,8 +8,6 @@ bool APIManager::init() {
 
   m_uploadDir = Mod::get()->getSaveDir() / "upload_gdr2_v3";
 
-  authenticate();
-
   m_initialized = true;
   return true;
 }
