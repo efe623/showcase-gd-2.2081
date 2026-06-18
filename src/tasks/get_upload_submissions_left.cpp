@@ -14,8 +14,13 @@ getUploadSubmissionsLeft(const GetUploadSubmissionsLeftInput &input) {
 
   auto response =
       co_await req.post(APIManager::get().getEndpoint("v3/getSubmissionsLeft"));
-  GEODE_UNWRAP_INTO(matjson::Value json, response.json());
-  GEODE_UNWRAP_INTO(UploadSubmissionsLeftResponse data,
-                    json.as<UploadSubmissionsLeftResponse>());
-  co_return Ok(data);
+  auto json = response.json();
+  if (json.isErr()) {
+    co_return Err(json.unwrapErr());
+  }
+  auto data = json.unwrap().as<UploadSubmissionsLeftResponse>();
+  if (data.isErr()) {
+    co_return Err(data.unwrapErr());
+  }
+  co_return Ok(data.unwrap());
 }

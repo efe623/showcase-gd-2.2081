@@ -13,7 +13,13 @@ getLevelReplayStatus(const LevelReplayStatusInput &input) {
   req.timeout(std::chrono::seconds(5));
   auto response =
       co_await req.post(APIManager::get().getEndpoint("v3/getReplayStatus"));
-  GEODE_UNWRAP_INTO(matjson::Value json, response.json());
-  GEODE_UNWRAP_INTO(LevelReplayStatus data, json.as<LevelReplayStatus>());
-  co_return Ok(data);
+  auto json = response.json();
+  if (json.isErr()) {
+    co_return Err(json.unwrapErr());
+  }
+  auto data = json.unwrap().as<LevelReplayStatus>();
+  if (data.isErr()) {
+    co_return Err(data.unwrapErr());
+  }
+  co_return Ok(data.unwrap());
 }

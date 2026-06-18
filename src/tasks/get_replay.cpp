@@ -15,7 +15,9 @@ GetReplayTask getReplay(const GetReplayInput& input) {
       co_await req.post(APIManager::get().getEndpoint("v3/getReplay"));
   ByteVector gdr2Raw = response.data();
   std::span<uint8_t> gdr2RawSpan(gdr2Raw);
-  GEODE_UNWRAP_INTO(ShowcaseBotReplay gdr2,
-                    ShowcaseBotReplay::importData(gdr2RawSpan));
-  co_return Ok(gdr2);
+  auto gdr2 = ShowcaseBotReplay::importData(gdr2RawSpan);
+  if (gdr2.isErr()) {
+    co_return Err(gdr2.unwrapErr());
+  }
+  co_return Ok(gdr2.unwrap());
 }
