@@ -14,6 +14,8 @@ project(Showcase VERSION 1.0.0)
 
 # Add all source files inside src (recursively)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+list(FILTER SOURCES EXCLUDE REGEX "/src/hooks/")
+list(FILTER SOURCES EXCLUDE REGEX "/src/managers/(interferences_manager|recorder_manager|replay_manager)\\.cpp$")
 # set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=-clangd-unused-includes")
 
 # Set up the mod binary
