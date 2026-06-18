@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../includes/geode.hpp"
+#include "../includes/task_poll.hpp"
 #include "../recorder/recorder.hpp"
 #include "../tasks/report_crash_log.hpp"
 
@@ -15,7 +16,7 @@ protected:
     
     bool m_initialized = false;
 
-    EventListener<ReportCrashLogTask> m_reportCrashLogListener;
+    ReportCrashLogTask m_reportCrashLogTask;
 
 public:
     bool init();

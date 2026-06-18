@@ -1,17 +1,17 @@
 #include "../includes/geode.hpp"
+#include "../includes/task_poll.hpp"
 #include "../managers/api_manager.hpp"
 #include "../managers/interferences_manager.hpp"
 #include "../managers/replay_manager.hpp"
 #include "../tasks/get_level_replay_status.hpp"
 #include "../tasks/get_replay.hpp"
 #include "Geode/loader/Loader.hpp"
-#include <dashauth.hpp>
 #include <optional>
 
 struct SBLevelInfoLayer : geode::Modify<SBLevelInfoLayer, LevelInfoLayer> {
   struct Fields {
-    EventListener<GetLevelReplayStatusTask> m_getLevelReplayStatusTaskListener;
-    EventListener<GetReplayTask> m_getReplayListener;
+    GetLevelReplayStatusTask m_getLevelReplayStatusTask;
+    GetReplayTask m_getReplayTask;
     CCMenuItemSpriteExtra *m_clapperBtn;
     std::optional<LevelReplayStatus> m_levelReplayStatus;
     std::optional<ShowcaseBotReplay> m_replay;
@@ -55,37 +55,21 @@ struct SBLevelInfoLayer : geode::Modify<SBLevelInfoLayer, LevelInfoLayer> {
 
     bool eligible = InterferencesManager::isLevelEligible(m_level);
 
-    m_fields->m_getLevelReplayStatusTaskListener.bind(
-        [this](GetLevelReplayStatusTask::Event *event) {
-          if (GetLevelReplayStatusTask::Value *result = event->getValue()) {
-            if (result->isErr())
-              return;
-            m_fields->m_levelReplayStatus = result->ok();
-            queueInMainThread([this] { updateButtonVisibility(); });
-          }
-        });
-
-    m_fields->m_getReplayListener.bind([this](GetReplayTask::Event *event) {
-      if (GetReplayTask::Value *result = event->getValue()) {
-        if (result->isErr())
-          return;
-        m_fields->m_replay = result->unwrap();
-        queueInMainThread([this] {
-          updateButtonVisibility();
-          playReplay();
-        });
-      }
-    });
-
     if (eligible) {
-      m_fields->m_getLevelReplayStatusTaskListener.setFilter(
-          getLevelReplayStatus({
-              m_level->m_levelID,
-              m_level->m_levelVersion,
-              GEODE_GD_VERSION_STRING,
-              Mod::get()->getVersion().toVString(),
-              APIManager::get().getDashAuthToken(),
-          }));
+      m_fields->m_getLevelReplayStatusTask = getLevelReplayStatus({
+          m_level->m_levelID,
+          m_level->m_levelVersion,
+          GEODE_GD_VERSION_STRING,
+          Mod::get()->getVersion().toVString(),
+          APIManager::get().getDashAuthToken(),
+      });
+      pollTask(m_fields->m_getLevelReplayStatusTask,
+               [this](GetLevelReplayStatusTask::Value *result) {
+                 if (result->isErr())
+                   return;
+                 m_fields->m_levelReplayStatus = result->ok();
+                 updateButtonVisibility();
+               });
     }
 
     return true;
@@ -99,16 +83,23 @@ struct SBLevelInfoLayer : geode::Modify<SBLevelInfoLayer, LevelInfoLayer> {
   }
 
   void onButton(CCObject *sender) {
-    if (!m_fields->m_levelReplayStatus &&
-        m_fields->m_levelReplayStatus->replayID.has_value())
+    if (!m_fields->m_levelReplayStatus ||
+        !m_fields->m_levelReplayStatus->replayID.has_value())
       return;
 
     if (m_fields->m_replay.has_value()) {
       playReplay();
     }
 
-    m_fields->m_getReplayListener.setFilter(getReplay(
-        GetReplayInput{m_fields->m_levelReplayStatus->replayID.value()}));
+    m_fields->m_getReplayTask =
+        getReplay(GetReplayInput{m_fields->m_levelReplayStatus->replayID.value()});
+    pollTask(m_fields->m_getReplayTask, [this](GetReplayTask::Value *result) {
+      if (result->isErr())
+        return;
+      m_fields->m_replay = result->unwrap();
+      updateButtonVisibility();
+      playReplay();
+    });
   }
 
   void playReplay() {

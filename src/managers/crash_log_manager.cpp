@@ -127,9 +127,14 @@ void CrashLogManager::reportLatestCrashLog() {
     return;
   }
 
-  m_reportCrashLogListener.setFilter(reportCrashLog({
+  m_reportCrashLogTask = reportCrashLog({
     std::get<1>(latestCrashLogOpt.value()),
     fmt::format("{}\n\n{}", Mod::get()->getVersion().toVString(), rawCrashLog),
     APIManager::get().getDashAuthToken(),
-  }));
+  });
+  pollTask(m_reportCrashLogTask, [](ReportCrashLogTask::Value *result) {
+    if (result->isErr()) {
+      log::warn("Failed to report Showcase crash log: {}", result->unwrapErr());
+    }
+  });
 }

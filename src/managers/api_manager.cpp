@@ -1,6 +1,5 @@
 #include "api_manager.hpp"
 #include "../tasks/authenticate.hpp"
-#include <dashauth.hpp>
 
 bool APIManager::init() {
   if (m_initialized) {
@@ -8,30 +7,6 @@ bool APIManager::init() {
   }
 
   m_uploadDir = Mod::get()->getSaveDir() / "upload_gdr2_v3";
-
-  m_getUploadSubmissionsLeftListener.bind(
-      [this](GetUploadSubmissionsLeftTask::Event *event) {
-        if (GetUploadSubmissionsLeftTask::Value *result = event->getValue()) {
-          if (result->isErr())
-            return;
-          log::debug("Have {} submissions left to upload",
-                    result->unwrap().submissionsLeft);
-          onSubmissionLeft(result->unwrap().submissionsLeft);
-        }
-      });
-
-  m_authenticateListener.bind([this](AuthenticateTask::Event *event) {
-    if (AuthenticateTask::Value *result = event->getValue()) {
-      if (result->isErr()) {
-        log::error("Failed to authenticate: {}", result->unwrapErr());
-        return;
-      }
-      log::info("Verified token.");
-      setDashAuthToken(result->unwrap());
-
-      tryUpload();
-    }
-  });
 
   authenticate();
 
@@ -68,19 +43,30 @@ void APIManager::authenticate() {
 
   auto savedToken = getDashAuthToken();
 
-  m_authenticateListener.setFilter(authenticateTask(savedToken));
+  m_authenticateTask = authenticateTask(savedToken);
+  pollTask(m_authenticateTask, [this](AuthenticateTask::Value *result) {
+    if (result->isErr()) {
+      log::error("Failed to authenticate: {}", result->unwrapErr());
+      return;
+    }
+    log::info("Verified token.");
+    setDashAuthToken(result->unwrap());
+    m_authenticated = true;
+
+    tryUpload();
+  });
 }
 
 bool APIManager::isAuthenticated() { return m_authenticated; }
 
 void APIManager::tryUpload() {
-  if (m_authenticated) {
+  if (!m_authenticated) {
     log::debug("Can't upload while not authenticated.");
     return;
   }
 
-  if (m_getUploadSubmissionsLeftListener.getFilter().isPending() ||
-      m_uploadSubmissionsListener.getFilter().isPending()) {
+  if (m_getUploadSubmissionsLeftTask.isPending() ||
+      m_uploadSubmissionsTask.isPending()) {
     log::debug("Can't upload. Another upload is currently pending...");
     return;
   }
@@ -89,12 +75,20 @@ void APIManager::tryUpload() {
       getDashAuthToken(),
   });
 
-  m_getUploadSubmissionsLeftListener.setFilter(leftTask);
+  m_getUploadSubmissionsLeftTask = leftTask;
+  pollTask(m_getUploadSubmissionsLeftTask,
+           [this](GetUploadSubmissionsLeftTask::Value *result) {
+             if (result->isErr())
+               return;
+             log::debug("Have {} submissions left to upload",
+                        result->unwrap().submissionsLeft);
+             onSubmissionLeft(result->unwrap().submissionsLeft);
+           });
 }
 
 void APIManager::onSubmissionLeft(const int submissionsLeft) {
-  if (m_getUploadSubmissionsLeftListener.getFilter().isPending() ||
-      m_uploadSubmissionsListener.getFilter().isPending()) {
+  if (m_getUploadSubmissionsLeftTask.isPending() ||
+      m_uploadSubmissionsTask.isPending()) {
     return;
   }
 
@@ -158,19 +152,16 @@ void APIManager::onSubmissionLeft(const int submissionsLeft) {
       },
       std::move(submissions));
 
-  m_uploadSubmissionsListener.bind(
-      [submissionPaths](UploadSubmissionsTask::Event *event) {
-        if (UploadSubmissionsTask::Value *result = event->getValue()) {
-          if (result->isErr())
-            return;
+  m_uploadSubmissionsTask = uploadTask;
+  pollTask(m_uploadSubmissionsTask,
+           [submissionPaths](UploadSubmissionsTask::Value *result) {
+             if (result->isErr())
+               return;
 
-          for (const auto subPath : submissionPaths) {
-            std::filesystem::remove(subPath);
-          }
+             for (const auto subPath : submissionPaths) {
+               std::filesystem::remove(subPath);
+             }
 
-          log::info("Showcase uploaded and deleted GDRs successfully.");
-        }
-      });
-
-  m_uploadSubmissionsListener.setFilter(uploadTask);
+             log::info("Showcase uploaded and deleted GDRs successfully.");
+           });
 }

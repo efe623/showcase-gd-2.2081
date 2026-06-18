@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
     set(CMAKE_OSX_ARCHITECTURES "arm64")
@@ -38,9 +38,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 # endif()
 
 # add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
-
-CPMAddPackage("gh:FireMario211/dashauth#main")
-target_link_libraries(${PROJECT_NAME} DashAuth)
 
 CPMAddPackage("gh:maxnut/GDReplayFormat#72078e54e2b0007c2f01150916f874182593d243")
 target_link_libraries(${PROJECT_NAME} libGDR)

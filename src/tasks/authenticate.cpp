@@ -1,6 +1,5 @@
 #include "authenticate.hpp"
 #include "../managers/api_manager.hpp"
-#include <dashauth.hpp>
 
 AuthenticateTask authenticateTask(const std::optional<std::string> token) {
   if (GJAccountManager::sharedState()->m_accountID == 0) {
@@ -24,20 +23,5 @@ AuthenticateTask authenticateTask(const std::optional<std::string> token) {
     }
   }
 
-  co_return co_await AuthenticateTask::runWithCallback(
-      [](auto finish, auto progress, auto hasBeenCancelled) {
-        dashauth::DashAuthRequest()
-            .getToken(Mod::get(),
-                      APIManager::get().getEndpoint("v3/dashAuth/api/v1"))
-            ->except(
-                [finish](const std::string &reason) { finish(Err(reason)); })
-            ->then([finish](const std::string &token) {
-              if (token == "uh oh") { // TODO: Why is it like this...
-                finish(Err("Unknown authentication failure."));
-                return;
-              }
-              log::info("got DashAuth token from server.");
-              finish(Ok(token));
-            });
-      });
+  co_return Err("DashAuth is not available in this GD 2.2081 port.");
 }

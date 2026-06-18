@@ -13,22 +13,10 @@ reportCrashLog(const ReportCrashLogInput &input) {
 
   req.timeout(std::chrono::seconds(5));
 
-  return req.post(APIManager::get().getEndpoint("v3/reportCrashLog"))
-      .map(
-          [](web::WebResponse *result) -> ReportCrashLogTask::Value {
-            if (result->ok()) {
-                return Ok();
-            }
-            return Err("Not reported crash log with code {}.", result->code());
-          },
-          [](web::WebProgress *progress)
-              -> ReportCrashLogTask::Progress {
-            auto p = progress->downloadProgress();
-            if (p.has_value()) {
-              return p.value();
-            } else {
-              return 0.f;
-            }
-          });
+  auto response =
+      co_await req.post(APIManager::get().getEndpoint("v3/reportCrashLog"));
+  if (response.ok()) {
+    co_return Ok();
+  }
+  co_return Err("Not reported crash log with code {}.", response.code());
 }
-

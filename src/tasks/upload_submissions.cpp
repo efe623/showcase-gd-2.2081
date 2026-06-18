@@ -21,21 +21,9 @@ uploadSubmissions(const UploadSubmissionsInput &input,
 
   req.timeout(std::chrono::seconds(5));
 
-  return req.post(APIManager::get().getEndpoint("v3/submit"))
-      .map(
-          [](web::WebResponse *result) -> UploadSubmissionsTask::Value {
-            if (result->ok()) {
-                return Ok();
-            }
-            return Err("Not submitted with code {}.", result->code());
-          },
-          [](web::WebProgress *progress)
-              -> UploadSubmissionsTask::Progress {
-            auto p = progress->downloadProgress();
-            if (p.has_value()) {
-              return p.value();
-            } else {
-              return 0.f;
-            }
-          });
+  auto response = co_await req.post(APIManager::get().getEndpoint("v3/submit"));
+  if (response.ok()) {
+    co_return Ok();
+  }
+  co_return Err("Not submitted with code {}.", response.code());
 }

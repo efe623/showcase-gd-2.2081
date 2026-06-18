@@ -35,6 +35,7 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/Popup.hpp>
 #include <Geode/ui/TextInput.hpp>
+#include <Geode/utils/async.hpp>
 #include <Geode/utils/Task.hpp>
 #include <Geode/utils/cocos.hpp>
 #include <Geode/utils/string.hpp>

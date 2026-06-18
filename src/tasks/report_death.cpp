@@ -13,22 +13,10 @@ reportDeath(const ReportDeathInput &input) {
 
   req.timeout(std::chrono::seconds(5));
 
-  return req.post(APIManager::get().getEndpoint("v3/reportDeath"))
-      .map(
-          [](web::WebResponse *result) -> ReportDeathTask::Value {
-            if (result->ok()) {
-                return Ok();
-            }
-            return Err("Not reported death with code {}.", result->code());
-          },
-          [](web::WebProgress *progress)
-              -> ReportDeathTask::Progress {
-            auto p = progress->downloadProgress();
-            if (p.has_value()) {
-              return p.value();
-            } else {
-              return 0.f;
-            }
-          });
+  auto response =
+      co_await req.post(APIManager::get().getEndpoint("v3/reportDeath"));
+  if (response.ok()) {
+    co_return Ok();
+  }
+  co_return Err("Not reported death with code {}.", response.code());
 }
-

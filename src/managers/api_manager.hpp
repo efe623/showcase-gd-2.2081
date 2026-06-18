@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../includes/geode.hpp"
+#include "../includes/task_poll.hpp"
 #include "../tasks/get_upload_submissions_left.hpp"
 #include "../tasks/upload_submissions.hpp"
 #include "../tasks/authenticate.hpp"
@@ -16,15 +17,15 @@ protected:
 
   typedef std::vector<std::vector<uint8_t>> SubmissionsData;
 
-  EventListener<AuthenticateTask> m_authenticateListener;
+  AuthenticateTask m_authenticateTask;
 
   bool m_initialized = false;
   bool m_authenticated = false;
 
   std::filesystem::path m_uploadDir;
   std::string m_baseURL = "http://showcase.flafy.dev";
-  EventListener<GetUploadSubmissionsLeftTask> m_getUploadSubmissionsLeftListener;
-  EventListener<UploadSubmissionsTask> m_uploadSubmissionsListener;
+  GetUploadSubmissionsLeftTask m_getUploadSubmissionsLeftTask;
+  UploadSubmissionsTask m_uploadSubmissionsTask;
 
   void onSubmissionLeft(const int submissionsLeft);
   void setDashAuthToken(const std::optional<std::string> &token);

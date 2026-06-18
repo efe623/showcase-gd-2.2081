@@ -11,21 +11,9 @@ getLevelReplayStatus(const LevelReplayStatusInput &input) {
   req.header("Content-Type", "application/json");
 
   req.timeout(std::chrono::seconds(5));
-  return req
-      .post(APIManager::get().getEndpoint("v3/getReplayStatus"))
-      .map(
-          [](web::WebResponse *result) -> GetLevelReplayStatusTask::Value {
-            GEODE_UNWRAP_INTO(matjson::Value json, result->json());
-            GEODE_UNWRAP_INTO(LevelReplayStatus data,
-                              json.as<LevelReplayStatus>());
-            return Ok(data);
-          },
-          [](web::WebProgress *progress) -> GetLevelReplayStatusTask::Progress {
-            auto p = progress->downloadProgress();
-            if (p.has_value()) {
-              return p.value();
-            } else {
-              return 0.f;
-            }
-          });
+  auto response =
+      co_await req.post(APIManager::get().getEndpoint("v3/getReplayStatus"));
+  GEODE_UNWRAP_INTO(matjson::Value json, response.json());
+  GEODE_UNWRAP_INTO(LevelReplayStatus data, json.as<LevelReplayStatus>());
+  co_return Ok(data);
 }

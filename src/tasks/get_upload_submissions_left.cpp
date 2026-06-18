@@ -12,21 +12,10 @@ getUploadSubmissionsLeft(const GetUploadSubmissionsLeftInput &input) {
 
   req.timeout(std::chrono::seconds(5));
 
-  return req.post(APIManager::get().getEndpoint("v3/getSubmissionsLeft"))
-      .map(
-          [](web::WebResponse *result) -> GetUploadSubmissionsLeftTask::Value {
-            GEODE_UNWRAP_INTO(matjson::Value json, result->json());
-            GEODE_UNWRAP_INTO(UploadSubmissionsLeftResponse data,
-                              json.as<UploadSubmissionsLeftResponse>());
-            return Ok(data);
-          },
-          [](web::WebProgress *progress)
-              -> GetUploadSubmissionsLeftTask::Progress {
-            auto p = progress->downloadProgress();
-            if (p.has_value()) {
-              return p.value();
-            } else {
-              return 0.f;
-            }
-          });
+  auto response =
+      co_await req.post(APIManager::get().getEndpoint("v3/getSubmissionsLeft"));
+  GEODE_UNWRAP_INTO(matjson::Value json, response.json());
+  GEODE_UNWRAP_INTO(UploadSubmissionsLeftResponse data,
+                    json.as<UploadSubmissionsLeftResponse>());
+  co_return Ok(data);
 }

@@ -1,11 +1,12 @@
 #include "../includes/geode.hpp"
+#include "../includes/task_poll.hpp"
 #include "../managers/api_manager.hpp"
 #include "../managers/interferences_manager.hpp"
 #include "../tasks/report_death.hpp"
 
 struct SCOnDeathPlayLayer : geode::Modify<SCOnDeathPlayLayer, PlayLayer> {
   struct Fields {
-    EventListener<ReportDeathTask> reportDeathListener;
+    ReportDeathTask reportDeathTask;
   };
 
   static void onModify(auto &self) {
@@ -18,13 +19,6 @@ struct SCOnDeathPlayLayer : geode::Modify<SCOnDeathPlayLayer, PlayLayer> {
   bool init(GJGameLevel *level, bool useReplay, bool dontCreateObjects) {
     if (!PlayLayer::init(level, useReplay, dontCreateObjects))
       return false;
-
-    m_fields->reportDeathListener.bind([this](ReportDeathTask::Event *event) {
-      if (ReportDeathTask::Value *result = event->getValue()) {
-        if (result->isErr())
-          return;
-      }
-    });
 
     return true;
   }
@@ -44,12 +38,16 @@ struct SCOnDeathPlayLayer : geode::Modify<SCOnDeathPlayLayer, PlayLayer> {
     int currentFrame = this->m_gameState.m_currentProgress;
     float currentPercent = getCurrentPercent();
 
-    m_fields->reportDeathListener.setFilter(reportDeath({
+    m_fields->reportDeathTask = reportDeath({
         m_level->m_levelID,
         m_level->m_levelVersion,
         currentFrame,
         currentPercent,
         APIManager::get().getDashAuthToken(),
-    }));
+    });
+    pollTask(m_fields->reportDeathTask, [](ReportDeathTask::Value *result) {
+      if (result->isErr())
+        return;
+    });
   }
 };
