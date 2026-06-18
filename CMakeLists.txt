@@ -12,10 +12,9 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 project(Showcase VERSION 1.0.0)
 
-# Add all source files inside src (recursively)
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
-list(FILTER SOURCES EXCLUDE REGEX "/src/hooks/")
-list(FILTER SOURCES EXCLUDE REGEX "/src/managers/(interferences_manager|recorder_manager|replay_manager)\\.cpp$")
+# Build a no-hook smoke-test binary first. The original mod hooks are not yet
+# stable on GD 2.2081, so keep startup as small as possible.
+set(SOURCES src/main.cpp)
 # set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=-clangd-unused-includes")
 
 # Set up the mod binary
@@ -40,9 +39,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 # endif()
 
 # add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
-
-CPMAddPackage("gh:maxnut/GDReplayFormat#72078e54e2b0007c2f01150916f874182593d243")
-target_link_libraries(${PROJECT_NAME} libGDR)
 
 # Set up dependencies, resources, and link Geode.
 setup_geode_mod(${PROJECT_NAME})

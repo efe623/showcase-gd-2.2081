@@ -1,7 +1,5 @@
-#include "managers/api_manager.hpp"
-#include "managers/crash_log_manager.hpp"
+#include <Geode/Geode.hpp>
 
-$execute {
-  CrashLogManager::get().init();
-  APIManager::get().init();
-}
+using namespace geode::prelude;
+
+$execute {}
